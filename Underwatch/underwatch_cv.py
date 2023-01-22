@@ -1,16 +1,24 @@
 from PIL import ImageGrab
 import numpy as np
 import cv2 as cv
+import os
 
 class ComputerVision:
   def __init__(self):
     frame = ImageGrab.grab()
     self.width = frame.width
     self.height = frame.height
-    self.elimination_template = cv.imread(r".\templates\elimination.png")
-    self.assist_template = cv.imread(r".\templates\assist.png")
-    self.eliminated_template = cv.imread(r".\templates\you_were_eliminated.png")
+    self.elimination_template = self.load_template("elimination.png")
+    self.assist_template = self.load_template("assist.png")
+    self.eliminated_template = self.load_template("you_were_eliminated.png")
     
+  def load_template(self, file_name):
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)),"templates",file_name)
+    template = cv.imread(path)
+    height = int(template.shape[0] * self.height / 1080)
+    width =  int(template.shape[1] * self.width / 1920)
+    return cv.resize(template, (width, height))
+
   def capture_frame(self):
     region = (.35*self.width, .68*self.height, .6*self.width, .8*self.height)
     frame = ImageGrab.grab(bbox=region)
