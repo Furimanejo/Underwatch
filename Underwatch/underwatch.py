@@ -29,11 +29,18 @@ async def main():
         if(time.time() - last_eliminated_time > 10 or time.time() - last_eliminated_time < 2):
             elims = cv.detect_eliminations()
             assists = cv.detect_assists()
-            if assists > 0 or elims > 0:
-                print(str(elims)+"/"+str(assists))
+            saves = cv.detect_saves()
+
+            if (elims > 0):
+                print("eliminations: "+str(elims))
+            if (assists > 0):
+                print("assists: "+str(assists))
+            if (saves > 0):
+                print("saves: "+str(saves))
+
             for device in client.devices.values():
                 if "VibrateCmd" in device.allowed_messages.keys():
-                    await device.send_vibrate_cmd((elims+assists)/3)
+                    await device.send_vibrate_cmd((elims+assists+saves)/3)
         await asyncio.sleep(.2)
 
 asyncio.run(main())
