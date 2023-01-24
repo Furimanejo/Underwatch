@@ -20,7 +20,7 @@ class ComputerVision:
     width =  int(template.shape[1] * self.width / 1920)
     return cv.resize(template, (width, height))
 
-  def capture_frame(self):
+  def capture_popup_frame(self):
     region = (.35*self.width, .68*self.height, .6*self.width, .8*self.height)
     frame = ImageGrab.grab(bbox=region)
     frame = np.array(frame)
