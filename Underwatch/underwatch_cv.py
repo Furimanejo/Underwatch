@@ -5,9 +5,17 @@ import os
 
 class ComputerVision:
   def __init__(self):
+    # PIL
     frame = ImageGrab.grab()
     self.width = frame.width
     self.height = frame.height
+
+    # DXCAM
+    # self.frame_grabber = dxcam.create(output_color="BGR")
+    # frame = self.frame_grabber.grab()
+    # self.width = frame.shape[1]
+    # self.height = frame.shape[0]
+
     self.elimination_template = self.load_template("elimination.png")
     self.assist_template = self.load_template("assist.png")
     self.eliminated_template = self.load_template("you_were_eliminated.png")
@@ -23,8 +31,10 @@ class ComputerVision:
   def capture_popup_frame(self):
     region = (.35*self.width, .68*self.height, .6*self.width, .8*self.height)
     frame = ImageGrab.grab(bbox=region)
+    # frame = self.frame_grabber.grab(bbox=region) # DXCAM
     frame = np.array(frame)
-    self.frame = cv.cvtColor(frame, cv.COLOR_RGB2BGR)
+    frame = cv.cvtColor(frame, cv.COLOR_RGB2BGR) # PIL
+    self.frame = frame
 
   def detect_eliminations(self):
     result = cv.matchTemplate(self.frame, self.elimination_template, cv.TM_CCOEFF_NORMED)
