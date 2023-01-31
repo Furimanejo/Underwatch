@@ -3,7 +3,7 @@ import numpy as np
 import cv2 as cv
 import os
 
-class ComputerVision:
+class OverwatchCV:
   def __init__(self):
     # PIL
     frame = ImageGrab.grab()
@@ -22,7 +22,7 @@ class ComputerVision:
     self.saved_template = self.load_template("saved.png")
     
   def load_template(self, file_name):
-    path = os.path.join(os.path.dirname(os.path.abspath(__file__)),"templates",file_name)
+    path = os.path.join(os.path.abspath("."),"templates",file_name)
     template = cv.imread(path)
     height = int(template.shape[0] * self.height / 1080)
     width =  int(template.shape[1] * self.width / 1920)

@@ -1,3 +1,2 @@
-call env\Scripts\activate.bat
-python underwatch.py
+python.exe underwatch.pyw
 pause
