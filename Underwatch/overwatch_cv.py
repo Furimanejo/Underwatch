@@ -1,7 +1,7 @@
 from PIL import ImageGrab
 import numpy as np
 import cv2 as cv
-import os
+import os, sys
 
 class OverwatchCV:
   def __init__(self):
@@ -22,7 +22,15 @@ class OverwatchCV:
     self.saved_template = self.load_template("saved.png")
     
   def load_template(self, file_name):
-    path = os.path.join(os.path.abspath("."),"templates",file_name)
+    if getattr(sys, 'frozen', False):
+      # If the application is run as a bundle, the PyInstaller bootloader
+      # extends the sys module by a flag frozen=True and sets the app 
+      # path into variable _MEIPASS'.
+      application_path = os.path.dirname(sys.executable)
+    else:
+      application_path = os.path.dirname(os.path.abspath(__file__))
+
+    path = os.path.join(application_path,"templates",file_name)
     template = cv.imread(path)
     height = int(template.shape[0] * self.height / 1080)
     width =  int(template.shape[1] * self.width / 1920)
