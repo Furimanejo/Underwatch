@@ -90,6 +90,7 @@ class Underwatch(QMainWindow):
 
     # Loop stuff
     self.score = 0
+    self.debug_info = ""
     self.client = bp.ButtplugClient("Underwatch")
     self.overwatch_cv = OverwatchCV()
     self.threadpool = QThreadPool()
@@ -110,49 +111,57 @@ class Underwatch(QMainWindow):
     self.score_label.move(int(0.1 * self.overwatch_cv.width), int(0.95 * self.overwatch_cv.height))
     self.overlay.show()
 
-  def closeEvent(self, event) -> None:
-    os._exit(0)
+    self.timer = QTimer()
+    self.timer.timeout.connect(self.update_overlay)
+    self.timer.start(100)
+
+  def update_overlay(self):
+    text = "Score: " + str(int(self.score)) + self.debug_info
+    self.score_label.setText(text)
+    self.score_label.adjustSize()
 
   async def async_loop(self):
+    self.overwatch_cv.start_cam()
+    start = time.time()
     last_update = time.time()
     while(True):
       delta_time = time.time() - last_update
       last_update = time.time()
-
-      self.overwatch_cv.capture_popup_frame()
-      elims = self.overwatch_cv.detect_eliminations()
-      assists = self.overwatch_cv.detect_assists()
-      saves = self.overwatch_cv.detect_saves()
-
       frame_score = 0
-      popup_duration = 2.8
-      frame_score += self.elimination_slider.value() * elims / popup_duration
-      frame_score += self.assist_slider.value() * assists / popup_duration
-      frame_score += self.saves_slider.value() * saves / popup_duration
+      
+      self.overwatch_cv.capture_frame()
+      capture_time = time.time() - last_update
+
+      debug_info = ""
+      if (self.overwatch_cv.is_killcam_or_potg()):
+        debug_info += " (Killcam or POTG)"
+      else:
+        elims, assists, saves = self.overwatch_cv.count_popups()
+        popup_duration = 2.7
+        frame_score += self.elimination_slider.value() * elims / popup_duration
+        frame_score += self.assist_slider.value() * assists / popup_duration
+        frame_score += self.saves_slider.value() * saves / popup_duration
+        if(elims > 0):
+          debug_info += " +Elimination x" + str(elims)
+        if(assists > 0):
+          debug_info += " +Assist x" + str(assists)
+        if(saves > 0):
+          debug_info += " +Save x" + str(saves)
+
+      detection_time = time.time() - last_update - capture_time
+      self.debug_info = "\nCV: " + str(int(capture_time * 1000)) + "+"+ str(int(detection_time * 1000)) + " ms" + debug_info
+
       if(frame_score == 0):
         frame_score -= self.decay_slider.value()
-
-      cv_time = time.time() - last_update
       self.score += delta_time * frame_score
       self.score = max(self.score, 0)
-
-      text = "Score: " + str(int(self.score))
-      if(elims > 0):
-        text += " +Elimination x" + str(elims)
-      if(assists > 0):
-        text += " +Assist x" + str(assists)
-      if(saves > 0):
-        text += " +Save x" + str(saves)
-      text += "\nCV: " + str(int(cv_time*1000)) + "ms"
-      self.score_label.setText(text)
-      self.score_label.adjustSize()
 
       if(self.try_connect):
         await self.connect()
         self.try_connect = False
 
-      time_before_next_send = .2 - cv_time
-      await asyncio.sleep(time_before_next_send)
+      while ((time.time()-last_update) < .2):
+        await asyncio.sleep(.001)
       await self.send_value_to_toys()
 
   def set_try_connect(self):
@@ -162,6 +171,7 @@ class Underwatch(QMainWindow):
     self.connector = bp.websocket_connector.ButtplugClientWebsocketConnector("ws://127.0.0.1:12345")
     try:
       await self.client.connect(self.connector)
+      print("connected")
       await self.client.start_scanning()
     except bp.ButtplugClientConnectorError as e:
       print(e.message)
@@ -171,6 +181,9 @@ class Underwatch(QMainWindow):
     for device in self.client.devices.values():
       if "VibrateCmd" in device.allowed_messages.keys():
           await device.send_vibrate_cmd(value)
+
+  def closeEvent(self, event) -> None:
+    os._exit(0)
 
 app = QApplication(sys.argv)
 underwatch = Underwatch()

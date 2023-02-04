@@ -1,2 +1,1 @@
-python.exe underwatch.pyw
-pause
+cmd /c start pythonw.exe underwatch.py
